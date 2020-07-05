@@ -3,8 +3,8 @@ package fetcher
 import (
 	"time"
 
-	"github.com/erikdubbelboer/ip-api-proxy/structs"
-	"github.com/erikdubbelboer/ip-api-proxy/util"
+	"github.com/ip-api/cache/structs"
+	"github.com/ip-api/cache/util"
 )
 
 type Mock struct {

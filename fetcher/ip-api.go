@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/erikdubbelboer/ip-api-proxy/structs"
-	"github.com/erikdubbelboer/ip-api-proxy/util"
+	"github.com/ip-api/cache/structs"
+	"github.com/ip-api/cache/util"
 	"github.com/mailru/easyjson/jwriter"
 	"github.com/valyala/fasthttp"
 )

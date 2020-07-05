@@ -3,7 +3,7 @@ package field_test
 import (
 	"testing"
 
-	"github.com/erikdubbelboer/ip-api-proxy/field"
+	"github.com/ip-api/cache/field"
 )
 
 func TestFromCSV(t *testing.T) {

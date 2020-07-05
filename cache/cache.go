@@ -3,8 +3,8 @@ package cache
 import (
 	"container/list"
 
-	"github.com/erikdubbelboer/ip-api-proxy/structs"
-	"github.com/erikdubbelboer/ip-api-proxy/util"
+	"github.com/ip-api/cache/structs"
+	"github.com/ip-api/cache/util"
 )
 
 // Based on https://raw.githubusercontent.com/hashicorp/golang-lru/master/simplelru/lru.go

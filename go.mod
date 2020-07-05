@@ -1,4 +1,4 @@
-module github.com/erikdubbelboer/ip-api-proxy
+module github.com/ip-api/cache
 
 go 1.14
 

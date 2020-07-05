@@ -6,8 +6,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/erikdubbelboer/ip-api-proxy/cache"
-	"github.com/erikdubbelboer/ip-api-proxy/structs"
+	"github.com/ip-api/cache/cache"
+	"github.com/ip-api/cache/structs"
 )
 
 func TestCache(t *testing.T) {

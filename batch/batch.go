@@ -4,11 +4,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/erikdubbelboer/ip-api-proxy/cache"
-	"github.com/erikdubbelboer/ip-api-proxy/fetcher"
-	"github.com/erikdubbelboer/ip-api-proxy/field"
-	"github.com/erikdubbelboer/ip-api-proxy/structs"
-	"github.com/erikdubbelboer/ip-api-proxy/wait"
+	"github.com/ip-api/cache/cache"
+	"github.com/ip-api/cache/fetcher"
+	"github.com/ip-api/cache/field"
+	"github.com/ip-api/cache/structs"
+	"github.com/ip-api/cache/wait"
 	"github.com/rs/zerolog"
 )
 
