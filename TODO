@@ -1,2 +1,9 @@
 - Do reverse lookups ourselves
 - Add /stats endpoint with some performance metrics
+
+- Implement find closest server with backups, no request should ever fail even if the main server goes down
+- Rename repo to proxy to avoid specifying -o <not cache> (go build: build output "cache" already exists and is a directory)
+- Include all requested fields in the returned JSON, even if empty
+- Implement /batch?fields=<fields> (sets default)
+- Find out what's going on here: curl 127.0.0.1/batch --data '["1.1.1.4","1.1.1.5",{"query":"1.1.1.6","fields":"country"}]'|jq
+- Return a failure/success for each object in a batch response, currently the entire request fails
