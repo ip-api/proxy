@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net"
 	"strconv"
 
@@ -246,11 +247,11 @@ func (h Handler) batch(ctx *fasthttp.RequestCtx) {
 }
 
 func (h Handler) Index(ctx *fasthttp.RequestCtx) {
-	/*defer func() {
+	defer func() {
 		if err := recover(); err != nil {
 			h.Logger.Error().Err(fmt.Errorf("%v", err)).Msg("panic")
 		}
-	}()*/
+	}()
 
 	ctx.Response.Header.SetCanonical(strCacheControl, strYesEverything)
 	ctx.Response.Header.SetCanonical(strAccessControlAllowOrigin, strStar)
