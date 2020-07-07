@@ -1,30 +1,17 @@
 package wait
 
-type BlockAndError struct {
-	C   chan struct{}
-	Err error
+type WaitForChannels map[chan struct{}]struct{}
+
+func New() WaitForChannels {
+	return make(map[chan struct{}]struct{})
 }
 
-type WaitForBlockAndError map[*BlockAndError]struct{}
-
-func New() WaitForBlockAndError {
-	return make(map[*BlockAndError]struct{})
-}
-
-func (w WaitForBlockAndError) Add(b *BlockAndError) {
+func (w WaitForChannels) Add(b chan struct{}) {
 	w[b] = struct{}{}
 }
 
-func (w WaitForBlockAndError) Wait() error {
-	for b := range w {
-		if b.Err != nil {
-			return b.Err
-		}
-
-		if b.C != nil {
-			<-b.C
-		}
+func (w WaitForChannels) Wait() {
+	for c := range w {
+		<-c
 	}
-
-	return nil
 }

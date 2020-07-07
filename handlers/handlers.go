@@ -46,6 +46,11 @@ var languages = map[string]struct{}{
 	"ru":    {},
 }
 
+var (
+	fail         = "fail"
+	invalidQuery = "invalid query"
+)
+
 const defaultLanguage = "en"
 
 type Handler struct {
@@ -105,19 +110,11 @@ func (h Handler) single(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	entry, bae := h.Batches.Add(ip, lang, fields)
+	entry, c := h.Batches.Add(ip, lang, fields)
 
-	if bae != nil {
-		if bae.Err != nil {
-			ctx.SetBodyString(`{"message":"error in upstream","status":"fail"}`)
-			ctx.Response.SetStatusCode(fasthttp.StatusInternalServerError)
-			return
-		}
-
+	if c != nil {
 		// Wait for the entry to contain valid data.
-		if bae.C != nil {
-			<-bae.C
-		}
+		<-c
 	}
 
 	jw := &jwriter.Writer{}
@@ -146,95 +143,120 @@ func (h Handler) batch(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	ips := make([]string, len(body))
+	qa := ctx.QueryArgs()
+
+	defaultLang := string(qa.Peek("lang"))
+	if defaultLang == "" {
+		defaultLang = defaultLanguage
+	} else if _, ok := languages[defaultLang]; !ok {
+		ctx.SetBodyString(`{"message":"invalid language","status":"fail"}`)
+		ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
+		return
+	}
+
+	var defaultFields field.Fields
+	if fieldsStr := util.B2s(qa.Peek("fields")); len(fieldsStr) == 0 {
+		defaultFields = field.Default
+	} else if i, err := strconv.Atoi(fieldsStr); err == nil {
+		defaultFields = field.FromInt(i)
+	} else {
+		defaultFields = field.FromCSV(fieldsStr)
+	}
+
 	fields := make([]field.Fields, len(body))
-	langs := make([]string, len(body))
-	entries := make([]*structs.CacheEntry, len(ips))
+	entries := make([]*structs.CacheEntry, len(body))
 
 	for i, part := range body {
-		if ip, ok := part.(string); ok {
-			ips[i] = ip
-			langs[i] = defaultLanguage
-			fields[i] = field.Default
-		} else if m, ok := part.(map[string]interface{}); ok {
-			if ipIf, ok := m["query"]; ok {
-				ip, ok := ipIf.(string)
-				if !ok {
-					ctx.SetBodyString(`{"message":"invalid query","status":"fail"}`)
-					ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-					return
-				}
+		var ip string
+		var lang string
 
-				if net.ParseIP(ip) == nil {
-					ctx.SetBodyString(`{"message":"invalid query","status":"fail"}`)
-					ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-					return
+		if ipStr, ok := part.(string); ok {
+			if net.ParseIP(ipStr) == nil {
+				fields[i] = defaultFields
+				entries[i] = &structs.CacheEntry{
+					Response: structs.Response{
+						Status:  &fail,
+						Message: &invalidQuery,
+						Query:   &ipStr,
+					},
 				}
-
-				ips[i] = ip
+				continue
 			} else {
-				ctx.SetBodyString(`{"message":"missing query","status":"fail"}`)
-				ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-				return
+				ip = ipStr
+				lang = defaultLang
+				fields[i] = defaultFields
 			}
-
+		} else if m, ok := part.(map[string]interface{}); ok {
 			if fieldsIf, ok := m["fields"]; ok {
 				if s, ok := fieldsIf.(string); ok {
-					if i, err := strconv.Atoi(s); err == nil {
-						fields[i] = field.FromInt(i)
+					if n, err := strconv.Atoi(s); err == nil {
+						fields[i] = field.FromInt(n)
 					} else {
 						fields[i] = field.FromCSV(s)
 					}
 				} else if f, ok := fieldsIf.(float64); ok {
 					fields[i] = field.FromInt(int(f))
 				} else {
-					ctx.SetBodyString(`{"message":"invalid fields","status":"fail"}`)
-					ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-					return
+					fields[i] = defaultFields
 				}
 			} else {
-				fields[i] = field.Default
+				fields[i] = defaultFields
+			}
+
+			if ipIf, ok := m["query"]; ok {
+				ip, ok = ipIf.(string)
+				if !ok {
+					entries[i] = &structs.CacheEntry{
+						Response: structs.Response{
+							Status:  &fail,
+							Message: &invalidQuery,
+						},
+					}
+					continue
+				}
+
+				if net.ParseIP(ip) == nil {
+					entries[i] = &structs.CacheEntry{
+						Response: structs.Response{
+							Status:  &fail,
+							Message: &invalidQuery,
+							Query:   &ip,
+						},
+					}
+					continue
+				}
+			} else {
+				entries[i] = &structs.CacheEntry{
+					Response: structs.Response{
+						Status:  &fail,
+						Message: &invalidQuery,
+					},
+				}
+				continue
 			}
 
 			if langIf, ok := m["lang"]; ok {
-				lang, ok := langIf.(string)
+				lang, ok = langIf.(string)
 				if !ok {
-					ctx.SetBodyString(`{"message":"invalid language","status":"fail"}`)
-					ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-					return
+					lang = defaultLang
+				} else if _, ok := languages[lang]; !ok {
+					lang = defaultLang
 				}
-
-				if _, ok := languages[lang]; !ok {
-					ctx.SetBodyString(`{"message":"invalid language","status":"fail"}`)
-					ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-					return
-				}
-
-				langs[i] = lang
 			} else {
-				langs[i] = defaultLanguage
+				lang = defaultLang
 			}
 		}
-	}
 
-	for i, ip := range ips {
-		f := fields[i]
-		lang := langs[i]
-
-		entry, bae := h.Batches.Add(ip, lang, f)
+		entry, c := h.Batches.Add(ip, lang, fields[i])
 		entries[i] = entry
-		if bae != nil {
-			w.Add(bae)
+		if c != nil {
+			w.Add(c)
 		}
 	}
 
-	if err := w.Wait(); err != nil {
-		ctx.SetBodyString(`{"message":"error in upstream","status":"fail"}`)
-		ctx.Response.SetStatusCode(fasthttp.StatusInternalServerError)
-		return
-	}
+	w.Wait()
 
-	responses := make(structs.Responses, 0, len(ips))
+	responses := make(structs.Responses, 0, len(entries))
 	for i, e := range entries {
 		responses = append(responses, e.Response.Trim(fields[i]))
 	}

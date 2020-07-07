@@ -8,7 +8,6 @@ import (
 	"github.com/ip-api/cache/fetcher"
 	"github.com/ip-api/cache/field"
 	"github.com/ip-api/cache/structs"
-	"github.com/ip-api/cache/wait"
 	"github.com/rs/zerolog"
 )
 
@@ -16,9 +15,14 @@ const (
 	maxBatchEntries = 100
 )
 
+var (
+	fail            = "fail"
+	errorInUpstream = "error in upstream"
+)
+
 type batch struct {
 	entries map[string]*structs.CacheEntry
-	bae     *wait.BlockAndError
+	c       chan struct{}
 }
 
 type Batches struct {
@@ -36,9 +40,7 @@ func New(logger zerolog.Logger, cache *cache.Cache, client fetcher.Client) *Batc
 	return &Batches{
 		next: &batch{
 			entries: make(map[string]*structs.CacheEntry),
-			bae: &wait.BlockAndError{
-				C: make(chan struct{}),
-			},
+			c:       make(chan struct{}),
 		},
 		running: make([]*batch, 0),
 		logger:  logger,
@@ -56,54 +58,62 @@ func (b *Batches) ProcessLoop() {
 }
 
 func (b *Batches) Process() {
-	var running *batch
-
 	b.mu.Lock()
-	{
-		if len(b.next.entries) == 0 {
-			// There are no requests in the batch.
-			// No need to create a new batch, just keep using the current one.
-			b.mu.Unlock()
-			return
-		}
-
-		b.running = append(b.running, b.next)
-		running = b.next
-		b.next = &batch{
-			entries: make(map[string]*structs.CacheEntry, len(b.next.entries)),
-			bae: &wait.BlockAndError{
-				C: make(chan struct{}),
-			},
-		}
-	}
-	b.mu.Unlock()
-
-	b.logger.Debug().Msgf("batch with %d entries", len(running.entries))
-
-	err := b.client.Fetch(running.entries)
-
-	b.mu.Lock()
-	if err != nil {
-		running.bae.Err = err
-	} else {
-		for key, entry := range running.entries {
-			b.cache.Add(key, entry)
-		}
-	}
-
-	for i, n := range b.running {
-		if n == running {
-			b.running[i] = b.running[len(b.running)-1]
-			b.running[len(b.running)-1] = nil
-			b.running = b.running[:len(b.running)-1]
-			break
-		}
-	}
-	close(running.bae.C)
+	b.processLocked()
 	b.mu.Unlock()
 }
 
-func (b *Batches) Add(ip string, lang string, fields field.Fields) (*structs.CacheEntry, *wait.BlockAndError) {
+// processLocked assumes b.mu is already locked.
+func (b *Batches) processLocked() {
+	var running *batch
+
+	if len(b.next.entries) == 0 {
+		// There are no requests in the batch.
+		// No need to create a new batch, just keep using the current one.
+		return
+	}
+
+	b.running = append(b.running, b.next)
+	running = b.next
+	b.next = &batch{
+		entries: make(map[string]*structs.CacheEntry, len(b.next.entries)),
+		c:       make(chan struct{}),
+	}
+
+	b.logger.Debug().Msgf("batch with %d entries", len(running.entries))
+
+	// Fetch multiple batches in parallel in goroutines.
+	go func() {
+		err := b.client.Fetch(running.entries)
+
+		if err != nil {
+			b.logger.Error().Err(err).Msg("error in upstream")
+		}
+
+		b.mu.Lock()
+		{
+			if err == nil {
+				for key, entry := range running.entries {
+					b.cache.Add(key, entry)
+				}
+			}
+
+			for i, n := range b.running {
+				if n == running {
+					b.running[i] = b.running[len(b.running)-1]
+					b.running[len(b.running)-1] = nil
+					b.running = b.running[:len(b.running)-1]
+					break
+				}
+			}
+
+			close(running.c)
+		}
+		b.mu.Unlock()
+	}()
+}
+
+func (b *Batches) Add(ip string, lang string, fields field.Fields) (*structs.CacheEntry, chan struct{}) {
 	key := ip + lang
 
 	b.mu.Lock()
@@ -121,7 +131,7 @@ func (b *Batches) Add(ip string, lang string, fields field.Fields) (*structs.Cac
 	for _, r := range b.running {
 		entry, ok := r.entries[key]
 		if ok && entry.Fields.Contains(fields) {
-			return entry, r.bae
+			return entry, r.c
 		}
 	}
 
@@ -130,19 +140,26 @@ func (b *Batches) Add(ip string, lang string, fields field.Fields) (*structs.Cac
 		// Make sure all fields are in the entry.
 		entry.Fields = entry.Fields.Merge(fields)
 
-		return entry, b.next.bae
+		return entry, b.next.c
 	}
 
 	entry = &structs.CacheEntry{
 		IP:     ip,
 		Lang:   lang,
 		Fields: fields,
+		Response: structs.Response{
+			// By default the response contains an upstream error.
+			Status:  &fail,
+			Message: &errorInUpstream,
+		},
 	}
 	b.next.entries[key] = entry
 
+	c := b.next.c
+
 	if len(b.next.entries) >= maxBatchEntries {
-		go b.Process()
+		b.processLocked()
 	}
 
-	return entry, b.next.bae
+	return entry, c
 }

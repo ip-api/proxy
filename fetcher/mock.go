@@ -1,6 +1,8 @@
 package fetcher
 
 import (
+	"errors"
+	"sync"
 	"time"
 
 	"github.com/ip-api/cache/structs"
@@ -8,11 +10,19 @@ import (
 )
 
 type Mock struct {
+	sync.Mutex
 	Requests []int // batch size of each batch request.
 }
 
 func (mo *Mock) Fetch(m map[string]*structs.CacheEntry) error {
+	mo.Lock()
+	defer mo.Unlock()
+
 	mo.Requests = append(mo.Requests, len(m))
+
+	if _, ok := m["0.0.0.0en"]; ok {
+		return errors.New("test error")
+	}
 
 	for key, entry := range m {
 		entry.Response = MockResponseFor(key)
@@ -22,46 +32,86 @@ func (mo *Mock) Fetch(m map[string]*structs.CacheEntry) error {
 }
 
 func (mo *Mock) FetchSelf(lang string) (structs.Response, error) {
+	mo.Lock()
+	defer mo.Unlock()
+
 	return structs.Response{}, nil
 }
 
+func intp(i int) *int {
+	return &i
+}
+
+func str(s string) *string {
+	return &s
+}
+
+func flt(f float64) *float64 {
+	return &f
+}
+
+func boolp(b bool) *bool {
+	return &b
+}
+
 func MockResponseFor(key string) structs.Response {
+	response := structs.Response{
+		Status:        str(""),
+		Continent:     str(""),
+		ContinentCode: str(""),
+		Country:       str(""),
+		CountryCode:   str(""),
+		Region:        str(""),
+		RegionName:    str(""),
+		City:          str(""),
+		District:      str(""),
+		Zip:           str(""),
+		Lat:           flt(0),
+		Lon:           flt(0),
+		Timezone:      str(""),
+		Offset:        intp(0),
+		Currency:      str(""),
+		ISP:           str(""),
+		Org:           str(""),
+		AS:            str(""),
+		ASName:        str(""),
+		Reverse:       str(""),
+		Mobile:        boolp(false),
+		Proxy:         boolp(false),
+		Hosting:       boolp(false),
+		Message:       str(""),
+		Query:         str(""),
+	}
+
 	switch key {
 	case "1.1.1.1en":
-		return structs.Response{
-			Country: "Some Country",
-			City:    "Some City",
-			Query:   "1.1.1.1",
-		}
+		response.Country = str("Some Country")
+		response.City = str("Some City")
+		response.Query = str("1.1.1.1")
 	case "1.1.1.1ja":
-		return structs.Response{
-			Country: "Some japanese Country",
-			City:    "Some japanese City",
-			Query:   "1.1.1.1",
-		}
+		response.Country = str("Some japanese Country")
+		response.City = str("Some japanese City")
+		response.Query = str("1.1.1.1")
 	case "2.2.2.2en":
-		// status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query
-		return structs.Response{
-			Status:      "success",
-			Country:     "Some other Country",
-			CountryCode: "SO",
-			Region:      "SX",
-			RegionName:  "Some other Region",
-			City:        "Some other City",
-			Zip:         "some other zip",
-			Lat:         13,
-			Lon:         37,
-			Timezone:    "some/timezone",
-			ISP:         "Some other ISP",
-			Org:         "Some other Org",
-			AS:          "Some other AS",
-			Query:       "2.2.2.2",
-		}
+		response.Status = str("success")
+		response.Country = str("Some other Country")
+		response.CountryCode = str("SO")
+		response.Region = str("SX")
+		response.RegionName = str("Some other Region")
+		response.City = str("Some other City")
+		response.Zip = str("some other zip")
+		response.Lat = flt(13)
+		response.Lon = flt(37)
+		response.Timezone = str("some/timezone")
+		response.ISP = str("Some other ISP")
+		response.Org = str("Some other Org")
+		response.AS = str("Some other AS")
+		response.Query = str("2.2.2.2")
 	default:
-		return structs.Response{
-			Country: key,
-			City:    key,
-			Query:   key[:len(key)-2],
-		}
+		response.Country = str(key)
+		response.City = str(key)
+		response.Query = str(key[:len(key)-2])
 	}
+
+	return response
 }

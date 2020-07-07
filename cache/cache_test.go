@@ -38,7 +38,7 @@ func TestCache(t *testing.T) {
 	}
 
 	size = c.Size()
-	expectedSize = 99449
+	expectedSize = 99590
 	if size != expectedSize {
 		t.Errorf("expected %d got %d", expectedSize, size)
 	}

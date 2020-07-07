@@ -104,45 +104,205 @@ func easyjson6a975c40DecodeGithubComIpApiCacheStructs1(in *jlexer.Lexer, out *Re
 		}
 		switch key {
 		case "status":
-			out.Status = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Status = nil
+			} else {
+				if out.Status == nil {
+					out.Status = new(string)
+				}
+				*out.Status = string(in.String())
+			}
 		case "continent":
-			out.Continent = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Continent = nil
+			} else {
+				if out.Continent == nil {
+					out.Continent = new(string)
+				}
+				*out.Continent = string(in.String())
+			}
 		case "continentCode":
-			out.ContinentCode = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.ContinentCode = nil
+			} else {
+				if out.ContinentCode == nil {
+					out.ContinentCode = new(string)
+				}
+				*out.ContinentCode = string(in.String())
+			}
 		case "country":
-			out.Country = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Country = nil
+			} else {
+				if out.Country == nil {
+					out.Country = new(string)
+				}
+				*out.Country = string(in.String())
+			}
 		case "countryCode":
-			out.CountryCode = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.CountryCode = nil
+			} else {
+				if out.CountryCode == nil {
+					out.CountryCode = new(string)
+				}
+				*out.CountryCode = string(in.String())
+			}
 		case "region":
-			out.Region = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Region = nil
+			} else {
+				if out.Region == nil {
+					out.Region = new(string)
+				}
+				*out.Region = string(in.String())
+			}
 		case "regionName":
-			out.RegionName = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.RegionName = nil
+			} else {
+				if out.RegionName == nil {
+					out.RegionName = new(string)
+				}
+				*out.RegionName = string(in.String())
+			}
 		case "city":
-			out.City = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.City = nil
+			} else {
+				if out.City == nil {
+					out.City = new(string)
+				}
+				*out.City = string(in.String())
+			}
 		case "district":
-			out.District = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.District = nil
+			} else {
+				if out.District == nil {
+					out.District = new(string)
+				}
+				*out.District = string(in.String())
+			}
 		case "zip":
-			out.Zip = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Zip = nil
+			} else {
+				if out.Zip == nil {
+					out.Zip = new(string)
+				}
+				*out.Zip = string(in.String())
+			}
 		case "lat":
-			out.Lat = float64(in.Float64())
+			if in.IsNull() {
+				in.Skip()
+				out.Lat = nil
+			} else {
+				if out.Lat == nil {
+					out.Lat = new(float64)
+				}
+				*out.Lat = float64(in.Float64())
+			}
 		case "lon":
-			out.Lon = float64(in.Float64())
+			if in.IsNull() {
+				in.Skip()
+				out.Lon = nil
+			} else {
+				if out.Lon == nil {
+					out.Lon = new(float64)
+				}
+				*out.Lon = float64(in.Float64())
+			}
 		case "timezone":
-			out.Timezone = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Timezone = nil
+			} else {
+				if out.Timezone == nil {
+					out.Timezone = new(string)
+				}
+				*out.Timezone = string(in.String())
+			}
 		case "offset":
-			out.Offset = int(in.Int())
+			if in.IsNull() {
+				in.Skip()
+				out.Offset = nil
+			} else {
+				if out.Offset == nil {
+					out.Offset = new(int)
+				}
+				*out.Offset = int(in.Int())
+			}
 		case "currency":
-			out.Currency = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Currency = nil
+			} else {
+				if out.Currency == nil {
+					out.Currency = new(string)
+				}
+				*out.Currency = string(in.String())
+			}
 		case "isp":
-			out.ISP = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.ISP = nil
+			} else {
+				if out.ISP == nil {
+					out.ISP = new(string)
+				}
+				*out.ISP = string(in.String())
+			}
 		case "org":
-			out.Org = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Org = nil
+			} else {
+				if out.Org == nil {
+					out.Org = new(string)
+				}
+				*out.Org = string(in.String())
+			}
 		case "as":
-			out.AS = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.AS = nil
+			} else {
+				if out.AS == nil {
+					out.AS = new(string)
+				}
+				*out.AS = string(in.String())
+			}
 		case "asname":
-			out.ASName = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.ASName = nil
+			} else {
+				if out.ASName == nil {
+					out.ASName = new(string)
+				}
+				*out.ASName = string(in.String())
+			}
 		case "reverse":
-			out.Reverse = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Reverse = nil
+			} else {
+				if out.Reverse == nil {
+					out.Reverse = new(string)
+				}
+				*out.Reverse = string(in.String())
+			}
 		case "mobile":
 			if in.IsNull() {
 				in.Skip()
@@ -174,9 +334,25 @@ func easyjson6a975c40DecodeGithubComIpApiCacheStructs1(in *jlexer.Lexer, out *Re
 				*out.Hosting = bool(in.Bool())
 			}
 		case "message":
-			out.Message = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Message = nil
+			} else {
+				if out.Message == nil {
+					out.Message = new(string)
+				}
+				*out.Message = string(in.String())
+			}
 		case "query":
-			out.Query = string(in.String())
+			if in.IsNull() {
+				in.Skip()
+				out.Query = nil
+			} else {
+				if out.Query == nil {
+					out.Query = new(string)
+				}
+				*out.Query = string(in.String())
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -191,13 +367,13 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 	out.RawByte('{')
 	first := true
 	_ = first
-	if in.Status != "" {
+	if in.Status != nil {
 		const prefix string = ",\"status\":"
 		first = false
 		out.RawString(prefix[1:])
-		out.String(string(in.Status))
+		out.String(string(*in.Status))
 	}
-	if in.Continent != "" {
+	if in.Continent != nil {
 		const prefix string = ",\"continent\":"
 		if first {
 			first = false
@@ -205,9 +381,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Continent))
+		out.String(string(*in.Continent))
 	}
-	if in.ContinentCode != "" {
+	if in.ContinentCode != nil {
 		const prefix string = ",\"continentCode\":"
 		if first {
 			first = false
@@ -215,9 +391,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.ContinentCode))
+		out.String(string(*in.ContinentCode))
 	}
-	if in.Country != "" {
+	if in.Country != nil {
 		const prefix string = ",\"country\":"
 		if first {
 			first = false
@@ -225,9 +401,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Country))
+		out.String(string(*in.Country))
 	}
-	if in.CountryCode != "" {
+	if in.CountryCode != nil {
 		const prefix string = ",\"countryCode\":"
 		if first {
 			first = false
@@ -235,9 +411,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.CountryCode))
+		out.String(string(*in.CountryCode))
 	}
-	if in.Region != "" {
+	if in.Region != nil {
 		const prefix string = ",\"region\":"
 		if first {
 			first = false
@@ -245,9 +421,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Region))
+		out.String(string(*in.Region))
 	}
-	if in.RegionName != "" {
+	if in.RegionName != nil {
 		const prefix string = ",\"regionName\":"
 		if first {
 			first = false
@@ -255,9 +431,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.RegionName))
+		out.String(string(*in.RegionName))
 	}
-	if in.City != "" {
+	if in.City != nil {
 		const prefix string = ",\"city\":"
 		if first {
 			first = false
@@ -265,9 +441,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.City))
+		out.String(string(*in.City))
 	}
-	if in.District != "" {
+	if in.District != nil {
 		const prefix string = ",\"district\":"
 		if first {
 			first = false
@@ -275,9 +451,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.District))
+		out.String(string(*in.District))
 	}
-	if in.Zip != "" {
+	if in.Zip != nil {
 		const prefix string = ",\"zip\":"
 		if first {
 			first = false
@@ -285,9 +461,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Zip))
+		out.String(string(*in.Zip))
 	}
-	if in.Lat != 0 {
+	if in.Lat != nil {
 		const prefix string = ",\"lat\":"
 		if first {
 			first = false
@@ -295,9 +471,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.Float64(float64(in.Lat))
+		out.Float64(float64(*in.Lat))
 	}
-	if in.Lon != 0 {
+	if in.Lon != nil {
 		const prefix string = ",\"lon\":"
 		if first {
 			first = false
@@ -305,9 +481,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.Float64(float64(in.Lon))
+		out.Float64(float64(*in.Lon))
 	}
-	if in.Timezone != "" {
+	if in.Timezone != nil {
 		const prefix string = ",\"timezone\":"
 		if first {
 			first = false
@@ -315,9 +491,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Timezone))
+		out.String(string(*in.Timezone))
 	}
-	if in.Offset != 0 {
+	if in.Offset != nil {
 		const prefix string = ",\"offset\":"
 		if first {
 			first = false
@@ -325,9 +501,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int(int(in.Offset))
+		out.Int(int(*in.Offset))
 	}
-	if in.Currency != "" {
+	if in.Currency != nil {
 		const prefix string = ",\"currency\":"
 		if first {
 			first = false
@@ -335,9 +511,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Currency))
+		out.String(string(*in.Currency))
 	}
-	if in.ISP != "" {
+	if in.ISP != nil {
 		const prefix string = ",\"isp\":"
 		if first {
 			first = false
@@ -345,9 +521,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.ISP))
+		out.String(string(*in.ISP))
 	}
-	if in.Org != "" {
+	if in.Org != nil {
 		const prefix string = ",\"org\":"
 		if first {
 			first = false
@@ -355,9 +531,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Org))
+		out.String(string(*in.Org))
 	}
-	if in.AS != "" {
+	if in.AS != nil {
 		const prefix string = ",\"as\":"
 		if first {
 			first = false
@@ -365,9 +541,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.AS))
+		out.String(string(*in.AS))
 	}
-	if in.ASName != "" {
+	if in.ASName != nil {
 		const prefix string = ",\"asname\":"
 		if first {
 			first = false
@@ -375,9 +551,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.ASName))
+		out.String(string(*in.ASName))
 	}
-	if in.Reverse != "" {
+	if in.Reverse != nil {
 		const prefix string = ",\"reverse\":"
 		if first {
 			first = false
@@ -385,7 +561,7 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Reverse))
+		out.String(string(*in.Reverse))
 	}
 	if in.Mobile != nil {
 		const prefix string = ",\"mobile\":"
@@ -417,7 +593,7 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		}
 		out.Bool(bool(*in.Hosting))
 	}
-	if in.Message != "" {
+	if in.Message != nil {
 		const prefix string = ",\"message\":"
 		if first {
 			first = false
@@ -425,9 +601,9 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Message))
+		out.String(string(*in.Message))
 	}
-	if in.Query != "" {
+	if in.Query != nil {
 		const prefix string = ",\"query\":"
 		if first {
 			first = false
@@ -435,7 +611,7 @@ func easyjson6a975c40EncodeGithubComIpApiCacheStructs1(out *jwriter.Writer, in R
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Query))
+		out.String(string(*in.Query))
 	}
 	out.RawByte('}')
 }
