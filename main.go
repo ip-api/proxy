@@ -6,11 +6,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ip-api/cache/batch"
-	"github.com/ip-api/cache/cache"
-	"github.com/ip-api/cache/fetcher"
-	"github.com/ip-api/cache/handlers"
-	"github.com/ip-api/cache/util"
+	"github.com/ip-api/proxy/batch"
+	"github.com/ip-api/proxy/cache"
+	"github.com/ip-api/proxy/fetcher"
+	"github.com/ip-api/proxy/handlers"
+	"github.com/ip-api/proxy/util"
 	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
 )

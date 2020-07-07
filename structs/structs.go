@@ -4,7 +4,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/ip-api/cache/field"
+	"github.com/ip-api/proxy/field"
 	_ "github.com/mailru/easyjson/gen"
 )
 

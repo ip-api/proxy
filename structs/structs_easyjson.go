@@ -4,7 +4,7 @@ package structs
 
 import (
 	json "encoding/json"
-	field "github.com/ip-api/cache/field"
+	field "github.com/ip-api/proxy/field"
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
