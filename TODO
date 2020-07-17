@@ -1,3 +1,2 @@
 - Do reverse lookups ourselves
 - Add /stats endpoint with some performance metrics
-- Implement find closest server with backups, no request should ever fail even if the main server goes down

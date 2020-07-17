@@ -30,6 +30,7 @@ var (
 	strOPTIONS                                = []byte("OPTIONS")
 	strPostGetOptions                         = []byte("POST, GET, OPTIONS")
 	strSlashBatch                             = []byte("/batch")
+	strSlashDebug                             = []byte("/debug")
 	strSlashJsonSlash                         = []byte("/json/")
 	strStar                                   = []byte("*")
 	strYesEverything                          = []byte("public, max-age=1800")
@@ -268,6 +269,14 @@ func (h Handler) batch(ctx *fasthttp.RequestCtx) {
 	}
 }
 
+func (h Handler) debug(ctx *fasthttp.RequestCtx) {
+	if err := json.NewEncoder(ctx).Encode(map[string]interface{}{
+		"fetcher": h.Client.Debug(),
+	}); err != nil {
+		h.Logger.Error().Err(err).Msg("failed to write responses")
+	}
+}
+
 func (h Handler) Index(ctx *fasthttp.RequestCtx) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -292,6 +301,8 @@ func (h Handler) Index(ctx *fasthttp.RequestCtx) {
 		h.single(ctx)
 	} else if bytes.HasPrefix(path, strSlashBatch) {
 		h.batch(ctx)
+	} else if bytes.HasPrefix(path, strSlashDebug) {
+		h.debug(ctx)
 	} else {
 		ctx.Response.SetStatusCode(fasthttp.StatusNotFound)
 	}

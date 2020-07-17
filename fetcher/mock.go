@@ -38,6 +38,10 @@ func (mo *Mock) FetchSelf(lang string) (structs.Response, error) {
 	return structs.Response{}, nil
 }
 
+func (mo *Mock) Debug() interface{} {
+	return nil
+}
+
 func intp(i int) *int {
 	return &i
 }

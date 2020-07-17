@@ -1,45 +1,43 @@
 package fetcher
 
 import (
-	"net/http"
+	"errors"
+	"net"
 	"os"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/ip-api/proxy/structs"
 	"github.com/ip-api/proxy/util"
 	"github.com/mailru/easyjson/jwriter"
+	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
 )
 
 type Client interface {
 	Fetch(map[string]*structs.CacheEntry) error
 	FetchSelf(lang string) (structs.Response, error)
+	Debug() interface{}
 }
 
 type ipApi struct {
-	client   *fasthttp.Client
+	mu sync.Mutex
+
+	clients  map[string]*fasthttp.HostClient
 	batchURL string
 	selfURL  string
 	ttl      time.Duration
+
+	servers []*server
+	retries int
 }
 
-func NewIPApi() (*ipApi, error) {
-	client := &fasthttp.Client{
-		NoDefaultUserAgentHeader:      true, // Don't send: User-Agent: fasthttp
-		MaxConnsPerHost:               100,
-		ReadTimeout:                   time.Second,
-		WriteTimeout:                  time.Second,
-		MaxIdleConnDuration:           time.Minute,
-		DisableHeaderNamesNormalizing: true, // We always set the correct case on our header.
-	}
+var ErrRetryLimitReached = errors.New("reached retry limit")
 
-	base := os.Getenv("IP_API_BASE")
-	if base == "" {
-		base = "https://pro.ip-api.com"
-	}
-
-	ttl := time.Minute
-	if v := os.Getenv("TTL"); v != "" {
+func NewIPApi(logger zerolog.Logger) (*ipApi, error) {
+	ttl := time.Hour * 24
+	if v := os.Getenv("CACHE_TTL"); v != "" {
 		if d, err := time.ParseDuration(v); err != nil {
 			return nil, err
 		} else {
@@ -47,12 +45,95 @@ func NewIPApi() (*ipApi, error) {
 		}
 	}
 
-	return &ipApi{
-		client:   client,
-		batchURL: base + "/batch?key=" + os.Getenv("IP_API_KEY"),
-		selfURL:  base + "/json/?key=" + os.Getenv("IP_API_KEY") + "&lang=",
+	retries := 4
+	if v := os.Getenv("RETRIES"); v != "" {
+		if i, err := strconv.Atoi(v); err != nil {
+			return nil, err
+		} else {
+			retries = i
+		}
+	}
+
+	f := &ipApi{
+		clients:  make(map[string]*fasthttp.HostClient),
+		batchURL: "https://pro.ip-api.com/batch?key=" + os.Getenv("IP_API_KEY"),
+		selfURL:  "https://pro.ip-api.com/json/?key=" + os.Getenv("IP_API_KEY") + "&lang=",
 		ttl:      ttl,
-	}, nil
+		retries:  retries,
+	}
+
+	serverRefreshRate := time.Hour
+	if v := os.Getenv("POPS_REFRESH"); v != "" {
+		if d, err := time.ParseDuration(v); err != nil {
+			logger.Error().Err(err).Msg("invalid POPS_REFRESH")
+		} else {
+			serverRefreshRate = d
+		}
+	}
+
+	go func() {
+		for {
+			servers, err := getServers(logger)
+			if err != nil {
+				logger.Error().Err(err).Msg("failed to fetch pops")
+
+				// Try again after a minute.
+				time.Sleep(time.Minute)
+				continue
+			}
+
+			f.mu.Lock()
+			f.servers = servers
+			f.mu.Unlock()
+
+			time.Sleep(serverRefreshRate)
+		}
+	}()
+
+	return f, nil
+}
+
+func (f *ipApi) Debug() interface{} {
+	return f.servers
+}
+
+func (f *ipApi) getBatchServerAndClient() (*server, *fasthttp.HostClient) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	var p *server
+	now := time.Now()
+	for _, pp := range f.servers {
+		if pp.LastError.Before(now) {
+			p = pp
+			break
+		}
+	}
+
+	host := "pro.ip-api.com"
+	if p != nil {
+		host = p.IP
+	}
+
+	client, ok := f.clients[host]
+	if !ok {
+		client = &fasthttp.HostClient{
+			Addr:                          "pro.ip-api.com:443",
+			IsTLS:                         true,
+			NoDefaultUserAgentHeader:      true, // Don't send: User-Agent: fasthttp
+			MaxConns:                      100,
+			ReadTimeout:                   time.Second,
+			WriteTimeout:                  time.Second,
+			MaxIdleConnDuration:           time.Minute,
+			DisableHeaderNamesNormalizing: true, // We always set the correct case on our header.
+			Dial: func(addr string) (net.Conn, error) {
+				return fasthttp.Dial(host + ":443")
+			},
+		}
+		f.clients[host] = client
+	}
+
+	return p, client
 }
 
 func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
@@ -64,8 +145,10 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI(f.batchURL)
-	req.Header.SetMethod(http.MethodPost)
+	if err := req.URI().Parse(nil, []byte(f.batchURL)); err != nil {
+		return err
+	}
+	req.Header.SetMethod(fasthttp.MethodPost)
 
 	jw := &jwriter.Writer{}
 	entries.MarshalEasyJSON(jw)
@@ -76,42 +159,68 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 
-	if err := f.client.Do(req, res); err != nil {
-		return err
-	}
-
 	var responses structs.Responses
-	if err := responses.UnmarshalJSON(res.Body()); err != nil {
-		return err
+	var err error
+
+	for i := 0; i < f.retries; i++ {
+		p, client := f.getBatchServerAndClient()
+
+		if err = client.Do(req, res); err == nil {
+			if err = responses.UnmarshalJSON(res.Body()); err == nil {
+				for i, entry := range entries {
+					entry.Response = responses[i]
+					entry.Expires = util.Now().Add(f.ttl)
+				}
+
+				return nil
+			}
+		}
+
+		f.mu.Lock()
+		p.LastError = time.Now()
+		f.mu.Unlock()
 	}
 
-	for i, entry := range entries {
-		entry.Response = responses[i]
-		entry.Expires = util.Now().Add(f.ttl)
+	if err == nil {
+		err = ErrRetryLimitReached
 	}
 
-	return nil
+	return err
 }
 
 func (f *ipApi) FetchSelf(lang string) (structs.Response, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI(f.selfURL + lang)
-	req.Header.SetMethod(http.MethodGet)
+	if err := req.URI().Parse(nil, []byte(f.selfURL+lang)); err != nil {
+		return structs.Response{}, err
+	}
+	req.Header.SetMethod(fasthttp.MethodGet)
 	req.Header.SetContentType("application/json")
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 
-	if err := f.client.Do(req, res); err != nil {
-		return structs.Response{}, err
+	var err error
+
+	for i := 0; i < f.retries; i++ {
+		p, client := f.getBatchServerAndClient()
+
+		if err = client.Do(req, res); err == nil {
+			var response structs.Response
+			if err := response.UnmarshalJSON(res.Body()); err == nil {
+				return response, nil
+			}
+		}
+
+		f.mu.Lock()
+		p.LastError = time.Now()
+		f.mu.Unlock()
 	}
 
-	var response structs.Response
-	if err := response.UnmarshalJSON(res.Body()); err != nil {
-		return structs.Response{}, err
+	if err == nil {
+		err = ErrRetryLimitReached
 	}
 
-	return response, nil
+	return structs.Response{}, err
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -21,12 +22,21 @@ func main() {
 		TimeFormat: "15:04:05.000",
 	}).With().Str("part", "main").Logger()
 
-	client, err := fetcher.NewIPApi()
+	client, err := fetcher.NewIPApi(logger)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("could not create fetcher")
 	}
 
-	cache := cache.New(1000000)
+	cacheSize := 1024 * 1024 * 1024 // 1GB
+	if v := os.Getenv("CACHE_SIZE"); v != "" {
+		if n, err := strconv.Atoi(v); err != nil {
+			logger.Fatal().Err(err).Msg("invalid cache size")
+		} else {
+			cacheSize = n
+		}
+	}
+
+	cache := cache.New(cacheSize)
 	batches := batch.New(logger.With().Str("part", "batch").Logger(), cache, client)
 
 	go batches.ProcessLoop()
@@ -67,7 +77,11 @@ func main() {
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	<-ch
 
-	if err := s.Shutdown(); err != nil {
-		logger.Error().Err(err).Msg("failed to shutdown server")
-	}
+	go func() {
+		if err := s.Shutdown(); err != nil {
+			logger.Error().Err(err).Msg("failed to shutdown server")
+		}
+	}()
+
+	time.Sleep(time.Second * 10)
 }
