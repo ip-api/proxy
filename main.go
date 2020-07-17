@@ -22,7 +22,7 @@ func main() {
 		TimeFormat: "15:04:05.000",
 	}).With().Str("part", "main").Logger()
 
-	client, err := fetcher.NewIPApi(logger)
+	client, err := fetcher.NewIPApi(logger.With().Str("part", "fetcher").Logger())
 	if err != nil {
 		logger.Fatal().Err(err).Msg("could not create fetcher")
 	}
