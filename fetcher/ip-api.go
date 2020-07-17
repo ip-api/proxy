@@ -101,18 +101,20 @@ func (f *ipApi) getBatchServerAndClient() (*server, *fasthttp.HostClient) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	var p *server
-	now := time.Now()
-	for _, pp := range f.servers {
-		if pp.LastError.Before(now) {
-			p = pp
+	// Only try servers which haven't return any error in the last minute.
+	noErrorAfter := time.Now().Add(-time.Minute)
+	var s *server
+	for _, ss := range f.servers {
+		if !ss.LastError.After(noErrorAfter) {
+			s = ss
 			break
 		}
 	}
 
+	// If no server was found we fall back on normal DNS.
 	host := "pro.ip-api.com"
-	if p != nil {
-		host = p.IP
+	if s != nil {
+		host = s.IP
 	}
 
 	client, ok := f.clients[host]
@@ -133,7 +135,7 @@ func (f *ipApi) getBatchServerAndClient() (*server, *fasthttp.HostClient) {
 		f.clients[host] = client
 	}
 
-	return p, client
+	return s, client
 }
 
 func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
@@ -163,7 +165,7 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 	var err error
 
 	for i := 0; i < f.retries; i++ {
-		p, client := f.getBatchServerAndClient()
+		server, client := f.getBatchServerAndClient()
 
 		if err = client.Do(req, res); err == nil {
 			if err = responses.UnmarshalJSON(res.Body()); err == nil {
@@ -176,9 +178,11 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 			}
 		}
 
-		f.mu.Lock()
-		p.LastError = time.Now()
-		f.mu.Unlock()
+		if server != nil {
+			f.mu.Lock()
+			server.LastError = time.Now()
+			f.mu.Unlock()
+		}
 	}
 
 	if err == nil {
@@ -204,7 +208,7 @@ func (f *ipApi) FetchSelf(lang string) (structs.Response, error) {
 	var err error
 
 	for i := 0; i < f.retries; i++ {
-		p, client := f.getBatchServerAndClient()
+		server, client := f.getBatchServerAndClient()
 
 		if err = client.Do(req, res); err == nil {
 			var response structs.Response
@@ -213,9 +217,11 @@ func (f *ipApi) FetchSelf(lang string) (structs.Response, error) {
 			}
 		}
 
-		f.mu.Lock()
-		p.LastError = time.Now()
-		f.mu.Unlock()
+		if server != nil {
+			f.mu.Lock()
+			server.LastError = time.Now()
+			f.mu.Unlock()
+		}
 	}
 
 	if err == nil {
