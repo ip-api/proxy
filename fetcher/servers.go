@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -17,6 +18,8 @@ type server struct {
 	Pop       string        `json:"pop"`
 	Latency   time.Duration `json:"latency"`
 	LastError time.Time     `json:"last_error"`
+	Requests  int64         `json:"requests"`
+	Errors    int64         `json:"errors"`
 }
 
 const latencyPings = 4
@@ -50,7 +53,7 @@ func latency(client *http.Client, ip string) time.Duration {
 	return measure / time.Duration(len(measures))
 }
 
-func getServers(logger zerolog.Logger) ([]*server, error) {
+func getServers(logger zerolog.Logger, current []*server) ([]*server, error) {
 	client := &http.Client{}
 
 	popsUrl := os.Getenv("POPS_URL")
@@ -72,15 +75,26 @@ func getServers(logger zerolog.Logger) ([]*server, error) {
 		return nil, err
 	}
 
+	// Build a lookup table so we can easily merge the old and new data together.
+	currentMap := make(map[string]*server, len(current))
+	for _, s := range current {
+		currentMap[s.IP] = s
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(len(servers))
 	for i := range servers {
-		go func(i int) {
+		go func(s *server) {
 			defer wg.Done()
-			servers[i].Latency = latency(client, servers[i].IP)
+			s.Latency = latency(client, s.IP)
 
-			logger.Debug().Dur("latency", servers[i].Latency).Str("ip", servers[i].IP).Msg("latency")
-		}(i)
+			if c, ok := currentMap[s.IP]; ok {
+				s.Requests = atomic.LoadInt64(&c.Requests)
+				s.Errors = atomic.LoadInt64(&c.Errors)
+			}
+
+			logger.Debug().Dur("latency", s.Latency).Str("ip", s.IP).Msg("latency")
+		}(servers[i])
 	}
 	wg.Wait()
 

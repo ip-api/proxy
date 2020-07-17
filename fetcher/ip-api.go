@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ip-api/proxy/structs"
@@ -73,7 +74,7 @@ func NewIPApi(logger zerolog.Logger) (*ipApi, error) {
 
 	go func() {
 		for {
-			servers, err := getServers(logger)
+			servers, err := getServers(logger, f.servers)
 			if err != nil {
 				logger.Error().Err(err).Msg("failed to fetch pops")
 
@@ -167,6 +168,8 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 	for i := 0; i < f.retries; i++ {
 		server, client := f.getBatchServerAndClient()
 
+		atomic.AddInt64(&server.Requests, 1)
+
 		if err = client.Do(req, res); err == nil {
 			if err = responses.UnmarshalJSON(res.Body()); err == nil {
 				for i, entry := range entries {
@@ -179,6 +182,8 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 		}
 
 		if server != nil {
+			atomic.AddInt64(&server.Errors, 1)
+
 			f.mu.Lock()
 			server.LastError = time.Now()
 			f.mu.Unlock()
@@ -210,6 +215,8 @@ func (f *ipApi) FetchSelf(lang string) (structs.Response, error) {
 	for i := 0; i < f.retries; i++ {
 		server, client := f.getBatchServerAndClient()
 
+		atomic.AddInt64(&server.Requests, 1)
+
 		if err = client.Do(req, res); err == nil {
 			var response structs.Response
 			if err := response.UnmarshalJSON(res.Body()); err == nil {
@@ -218,6 +225,8 @@ func (f *ipApi) FetchSelf(lang string) (structs.Response, error) {
 		}
 
 		if server != nil {
+			atomic.AddInt64(&server.Errors, 1)
+
 			f.mu.Lock()
 			server.LastError = time.Now()
 			f.mu.Unlock()
