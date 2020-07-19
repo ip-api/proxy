@@ -14,6 +14,7 @@ import (
 	"github.com/ip-api/proxy/structs"
 	"github.com/ip-api/proxy/util"
 	"github.com/ip-api/proxy/wait"
+	"github.com/mailru/easyjson"
 	"github.com/mailru/easyjson/jwriter"
 	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
@@ -31,6 +32,7 @@ var (
 	strPostGetOptions                         = []byte("POST, GET, OPTIONS")
 	strSlashBatch                             = []byte("/batch")
 	strSlashDebug                             = []byte("/debug")
+	strSlashJson                              = []byte("/json")
 	strSlashJsonSlash                         = []byte("/json/")
 	strStar                                   = []byte("*")
 	strYesEverything                          = []byte("public, max-age=1800")
@@ -47,11 +49,6 @@ var languages = map[string]struct{}{
 	"ru":    {},
 }
 
-var (
-	fail         = "fail"
-	invalidQuery = "invalid query"
-)
-
 const defaultLanguage = "en"
 
 type Handler struct {
@@ -61,6 +58,14 @@ type Handler struct {
 	Client  fetcher.Client
 }
 
+func (h Handler) writeResponse(ctx *fasthttp.RequestCtx, response easyjson.Marshaler) {
+	jw := &jwriter.Writer{}
+	response.MarshalEasyJSON(jw)
+	if _, err := jw.DumpTo(ctx); err != nil {
+		h.Logger.Error().Err(err).Msg("failed to write response")
+	}
+}
+
 // /json/{query}
 //   ?fields=<bitmap | comma separated list>
 //   ?lang=<lang>
@@ -68,15 +73,6 @@ type Handler struct {
 func (h Handler) single(ctx *fasthttp.RequestCtx) {
 	path := ctx.Path()
 	qa := ctx.QueryArgs()
-
-	lang := string(qa.Peek("lang"))
-	if lang == "" {
-		lang = defaultLanguage
-	} else if _, ok := languages[lang]; !ok {
-		ctx.SetBodyString(`{"message":"invalid language","status":"fail"}`)
-		ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-		return
-	}
 
 	var fields field.Fields
 	fieldsStr := util.B2s(qa.Peek("fields"))
@@ -88,26 +84,29 @@ func (h Handler) single(ctx *fasthttp.RequestCtx) {
 		fields = field.FromCSV(fieldsStr)
 	}
 
-	ip := string(path[len(strSlashJsonSlash):])
-	if len(ip) == 0 {
-		r, err := h.Client.FetchSelf(lang)
-		if err != nil {
-			ctx.SetBodyString(`{"message":"error in upstream","status":"fail"}`)
-			ctx.Response.SetStatusCode(fasthttp.StatusInternalServerError)
-			return
-		}
-
-		jw := &jwriter.Writer{}
-		r.Trim(fields).MarshalEasyJSON(jw)
-		if _, err := jw.DumpTo(ctx); err != nil {
-			h.Logger.Error().Err(err).Msg("failed to write response")
-		}
+	lang := string(qa.Peek("lang"))
+	if lang == "" {
+		lang = defaultLanguage
+	} else if _, ok := languages[lang]; !ok {
+		h.writeResponse(ctx, structs.ErrorResponse("fail", "invalid language").Trim(fields))
 		return
 	}
 
+	if len(path) <= len(strSlashJsonSlash) {
+		r, err := h.Client.FetchSelf(lang)
+		if err != nil {
+			h.writeResponse(ctx, structs.ErrorResponse("fail", "error in upstream").Trim(fields))
+			return
+		}
+
+		h.writeResponse(ctx, r.Trim(fields))
+		return
+	}
+
+	ip := string(path[len(strSlashJsonSlash):])
+
 	if net.ParseIP(ip) == nil {
-		ctx.SetBodyString(`{"message":"invalid query","status":"fail"}`)
-		ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
+		h.writeResponse(ctx, structs.ErrorResponse("fail", "invalid query").Trim(fields))
 		return
 	}
 
@@ -118,11 +117,7 @@ func (h Handler) single(ctx *fasthttp.RequestCtx) {
 		<-c
 	}
 
-	jw := &jwriter.Writer{}
-	entry.Response.Trim(fields).MarshalEasyJSON(jw)
-	if _, err := jw.DumpTo(ctx); err != nil {
-		h.Logger.Error().Err(err).Msg("failed to write response")
-	}
+	h.writeResponse(ctx, entry.Response.Trim(fields))
 }
 
 // /batch
@@ -135,25 +130,7 @@ func (h Handler) single(ctx *fasthttp.RequestCtx) {
 // }
 // ]
 func (h Handler) batch(ctx *fasthttp.RequestCtx) {
-	w := wait.New()
-
-	var body []interface{}
-	if err := json.Unmarshal(ctx.PostBody(), &body); err != nil {
-		ctx.SetBodyString(`{"message":"invalid request","status":"fail"}`)
-		ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-		return
-	}
-
 	qa := ctx.QueryArgs()
-
-	defaultLang := string(qa.Peek("lang"))
-	if defaultLang == "" {
-		defaultLang = defaultLanguage
-	} else if _, ok := languages[defaultLang]; !ok {
-		ctx.SetBodyString(`{"message":"invalid language","status":"fail"}`)
-		ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-		return
-	}
 
 	var defaultFields field.Fields
 	if fieldsStr := util.B2s(qa.Peek("fields")); len(fieldsStr) == 0 {
@@ -164,8 +141,27 @@ func (h Handler) batch(ctx *fasthttp.RequestCtx) {
 		defaultFields = field.FromCSV(fieldsStr)
 	}
 
+	var body []interface{}
+	if err := json.Unmarshal(ctx.PostBody(), &body); err != nil {
+		h.writeResponse(ctx, structs.Responses{
+			structs.ErrorResponse("fail", "invalid body").Trim(defaultFields),
+		})
+		return
+	}
+
+	defaultLang := string(qa.Peek("lang"))
+	if defaultLang == "" {
+		defaultLang = defaultLanguage
+	} else if _, ok := languages[defaultLang]; !ok {
+		h.writeResponse(ctx, structs.Responses{
+			structs.ErrorResponse("fail", "invalid language").Trim(defaultFields),
+		})
+		return
+	}
+
 	fields := make([]field.Fields, len(body))
 	entries := make([]*structs.CacheEntry, len(body))
+	w := wait.New()
 
 	for i, part := range body {
 		var ip string
@@ -175,11 +171,7 @@ func (h Handler) batch(ctx *fasthttp.RequestCtx) {
 			if net.ParseIP(ipStr) == nil {
 				fields[i] = defaultFields
 				entries[i] = &structs.CacheEntry{
-					Response: structs.Response{
-						Status:  &fail,
-						Message: &invalidQuery,
-						Query:   &ipStr,
-					},
+					Response: structs.ErrorResponse("fail", "invalid query"),
 				}
 				continue
 			} else {
@@ -208,30 +200,20 @@ func (h Handler) batch(ctx *fasthttp.RequestCtx) {
 				ip, ok = ipIf.(string)
 				if !ok {
 					entries[i] = &structs.CacheEntry{
-						Response: structs.Response{
-							Status:  &fail,
-							Message: &invalidQuery,
-						},
+						Response: structs.ErrorResponse("fail", "invalid query"),
 					}
 					continue
 				}
 
 				if net.ParseIP(ip) == nil {
 					entries[i] = &structs.CacheEntry{
-						Response: structs.Response{
-							Status:  &fail,
-							Message: &invalidQuery,
-							Query:   &ip,
-						},
+						Response: structs.ErrorResponse("fail", "invalid query"),
 					}
 					continue
 				}
 			} else {
 				entries[i] = &structs.CacheEntry{
-					Response: structs.Response{
-						Status:  &fail,
-						Message: &invalidQuery,
-					},
+					Response: structs.ErrorResponse("fail", "invalid query"),
 				}
 				continue
 			}
@@ -262,11 +244,7 @@ func (h Handler) batch(ctx *fasthttp.RequestCtx) {
 		responses = append(responses, e.Response.Trim(fields[i]))
 	}
 
-	jw := &jwriter.Writer{}
-	responses.MarshalEasyJSON(jw)
-	if _, err := jw.DumpTo(ctx); err != nil {
-		h.Logger.Error().Err(err).Msg("failed to write responses")
-	}
+	h.writeResponse(ctx, responses)
 }
 
 func (h Handler) debug(ctx *fasthttp.RequestCtx) {
@@ -297,11 +275,11 @@ func (h Handler) Index(ctx *fasthttp.RequestCtx) {
 
 	path := ctx.Path()
 
-	if bytes.HasPrefix(path, strSlashJsonSlash) {
+	if bytes.HasPrefix(path, strSlashJsonSlash) || bytes.Equal(path, strSlashJson) {
 		h.single(ctx)
-	} else if bytes.HasPrefix(path, strSlashBatch) {
+	} else if bytes.Equal(path, strSlashBatch) {
 		h.batch(ctx)
-	} else if bytes.HasPrefix(path, strSlashDebug) {
+	} else if bytes.Equal(path, strSlashDebug) {
 		h.debug(ctx)
 	} else {
 		ctx.Response.SetStatusCode(fasthttp.StatusNotFound)

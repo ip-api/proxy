@@ -168,7 +168,9 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 	for i := 0; i < f.retries; i++ {
 		server, client := f.getBatchServerAndClient()
 
-		atomic.AddInt64(&server.Requests, 1)
+		if server != nil {
+			atomic.AddInt64(&server.Requests, 1)
+		}
 
 		if err = client.Do(req, res); err == nil {
 			if err = responses.UnmarshalJSON(res.Body()); err == nil {
@@ -215,7 +217,9 @@ func (f *ipApi) FetchSelf(lang string) (structs.Response, error) {
 	for i := 0; i < f.retries; i++ {
 		server, client := f.getBatchServerAndClient()
 
-		atomic.AddInt64(&server.Requests, 1)
+		if server != nil {
+			atomic.AddInt64(&server.Requests, 1)
+		}
 
 		if err = client.Do(req, res); err == nil {
 			var response structs.Response

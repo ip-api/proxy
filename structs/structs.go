@@ -39,6 +39,14 @@ type Response struct {
 	Query         *string  `json:"query,omitempty"`         // "24.48.0.1"
 }
 
+func ErrorResponse(status, message string) Response {
+	return Response{
+		// By default the response contains an upstream error.
+		Status:  &status,
+		Message: &message,
+	}
+}
+
 func (r Response) Trim(fields field.Fields) Response {
 	if !fields.Contains(16384) {
 		r.Status = nil

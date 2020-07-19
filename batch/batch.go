@@ -15,11 +15,6 @@ const (
 	maxBatchEntries = 100
 )
 
-var (
-	fail            = "fail"
-	errorInUpstream = "error in upstream"
-)
-
 type batch struct {
 	entries map[string]*structs.CacheEntry
 	c       chan struct{}
@@ -144,14 +139,10 @@ func (b *Batches) Add(ip string, lang string, fields field.Fields) (*structs.Cac
 	}
 
 	entry = &structs.CacheEntry{
-		IP:     ip,
-		Lang:   lang,
-		Fields: fields,
-		Response: structs.Response{
-			// By default the response contains an upstream error.
-			Status:  &fail,
-			Message: &errorInUpstream,
-		},
+		IP:       ip,
+		Lang:     lang,
+		Fields:   fields,
+		Response: structs.ErrorResponse("fail", "error in upstream"),
 	}
 	b.next.entries[key] = entry
 
