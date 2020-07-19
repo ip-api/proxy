@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"strconv"
@@ -174,6 +175,13 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 
 		if err = client.Do(req, res); err == nil {
 			if err = responses.UnmarshalJSON(res.Body()); err == nil {
+				if len(responses) != len(entries) {
+					if len(responses) == 1 && responses[0].Message != nil {
+						return fmt.Errorf("%s", *responses[0].Message)
+					}
+					return fmt.Errorf("backend response cound (%d) doesn't match requested count (%d)", len(responses), len(entries))
+				}
+
 				for i, entry := range entries {
 					entry.Response = responses[i]
 					entry.Expires = util.Now().Add(f.ttl)

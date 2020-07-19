@@ -1,6 +1,7 @@
 package batch
 
 import (
+	"os"
 	"sync"
 	"time"
 
@@ -45,8 +46,17 @@ func New(logger zerolog.Logger, cache *cache.Cache, client fetcher.Client) *Batc
 }
 
 func (b *Batches) ProcessLoop() {
+	delay := time.Millisecond * 10
+	if v := os.Getenv("BATCH_DELAY"); v != "" {
+		if d, err := time.ParseDuration(v); err != nil {
+			b.logger.Error().Err(err).Msg("invalid BATCH_DELAY")
+		} else {
+			delay = d
+		}
+	}
+
 	for {
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(delay)
 
 		b.Process()
 	}

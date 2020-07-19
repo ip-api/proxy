@@ -2,7 +2,7 @@ package field
 
 import "strings"
 
-const Default = 28671 // status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query
+const Default = 61439 // status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query,message
 
 var fields = map[string]int{
 	"country":       1,

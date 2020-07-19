@@ -93,7 +93,7 @@ func getServers(logger zerolog.Logger, current []*server) ([]*server, error) {
 				s.Errors = atomic.LoadInt64(&c.Errors)
 			}
 
-			logger.Debug().Dur("latency", s.Latency).Str("ip", s.IP).Msg("latency")
+			logger.Debug().Dur("latency", s.Latency).Str("ip", s.IP).Str("pop", s.Pop).Msg("latency")
 		}(servers[i])
 	}
 	wg.Wait()

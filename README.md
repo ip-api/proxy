@@ -9,3 +9,4 @@
 | RETRIES      | Number   | 4                                               | How many times to retry backend requests |
 | POPS_URL     | Url      | https://d2e7s0viy93a0y.cloudfront.net/pops.json | Endpoint to fetch server locations |
 | POPS_REFRESH | Duration | 1h                                              | How often to refresh the server locations  |
+| BATCH_DELAY  | Duration | 10ms                                            | Max delay before sending a batch to the backend |

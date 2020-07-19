@@ -99,7 +99,7 @@ func TestBatch(t *testing.T) {
 	}
 
 	body := string(ctx.Response.Body())
-	expectedBody := `[{"status":"","country":"3.3.3.3en","countryCode":"","region":"","regionName":"","city":"3.3.3.3en","zip":"","lat":0,"lon":0,"timezone":"","isp":"","org":"","as":"","query":"3.3.3.3"},{"status":"success","country":"Some other Country","countryCode":"SO","region":"SX","regionName":"Some other Region","city":"Some other City","zip":"some other zip","lat":13,"lon":37,"timezone":"some/timezone","isp":"Some other ISP","org":"Some other Org","as":"Some other AS","query":"2.2.2.2"},{"country":"Some japanese Country"}]`
+	expectedBody := `[{"status":"","country":"3.3.3.3en","countryCode":"","region":"","regionName":"","city":"3.3.3.3en","zip":"","lat":0,"lon":0,"timezone":"","isp":"","org":"","as":"","message":"","query":"3.3.3.3"},{"status":"success","country":"Some other Country","countryCode":"SO","region":"SX","regionName":"Some other Region","city":"Some other City","zip":"some other zip","lat":13,"lon":37,"timezone":"some/timezone","isp":"Some other ISP","org":"Some other Org","as":"Some other AS","message":"","query":"2.2.2.2"},{"country":"Some japanese Country"}]`
 	if body != expectedBody {
 		t.Errorf("\nexpected\n%s\ngot\n%s", expectedBody, body)
 	}
