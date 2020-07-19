@@ -1,3 +1,37 @@
+**Install on Debian**
+
+- Add user
+
+```adduser --system --disabled-password --disabled-login --home /opt/ip-api-proxy --group ip-api-proxy```
+
+- Create a systemd file
+```[Unit]
+Description=ip-api proxy server
+Documentation=https://github.com/ip-api/proxy
+After=network.target
+
+[Service]
+PermissionsStartOnly=true
+LimitNOFILE=1048576
+LimitNPROC=512
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+User=ip-api-proxy
+WorkingDirectory=/opt/ip-api-proxy
+EnvironmentFile=/opt/ip-api-proxy/config
+ExecStart=/opt/ip-api-proxy
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- Create a config file
+
+```/opt/ip-api-proxy/config```
+
+
 **Environment variables**
 
 | Name         | Type     | Default                                         | Description |
