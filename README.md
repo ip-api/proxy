@@ -1,8 +1,17 @@
 **Install on Debian**
+- Get the latest version
+
+```
+go get -u github.com/ip-api/proxy
+```
 
 - Add user
 
-```adduser --system --disabled-password --disabled-login --home /opt/ip-api-proxy --group ip-api-proxy```
+```
+adduser --system --disabled-password --disabled-login --home /opt/ip-api-proxy --group ip-api-proxy
+```
+
+- Copy the binary to ```/opt/ip-api-proxy/proxy```
 
 - Create a systemd file
 ```[Unit]
@@ -29,8 +38,16 @@ WantedBy=multi-user.target
 
 - Create a config file
 
-```/opt/ip-api-proxy/config```
+```
+/opt/ip-api-proxy/config
+```
 
+Example configuration:
+
+```
+IP_API_KEY=your_api_key
+LOG_OUTPUT=info
+```
 
 **Environment variables**
 
@@ -41,7 +58,6 @@ WantedBy=multi-user.target
 | CACHE_TTL        | Duration | 24h                                             | For how long to cache entries |
 | CACHE_SIZE       | Number   | 1073741824                                      | In memory cache size |
 | RETRIES          | Number   | 4                                               | How many times to retry backend requests |
-| POPS_URL         | Url      | https://d2e7s0viy93a0y.cloudfront.net/pops.json | Endpoint to fetch server locations |
 | POPS_REFRESH     | Duration | 1h                                              | How often to refresh the server locations  |
 | BATCH_DELAY      | Duration | 10ms                                            | Max delay before sending a batch to the backend |
 | LOG_OUTPUT       | String   | ""                                              | Set to "console" for console friendly output |
