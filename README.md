@@ -1,3 +1,17 @@
+**ip-api cache**
+
+A proxy that caches query results from the ip-api.com pro endpoint.
+
+- offers better performance via multiple keep-alive connections to ip-api servers
+- choses the best ip-api PoP based on latency
+- automatic retry for failed requests
+- advanced caching for each response field
+- automatically batches requests to reduce network requests
+
+Only /json and /batch is supported.
+
+After installing, change your applications to use ```http://127.0.0.1:8080``` instead of ```http(s)://pro.ip-api.com```
+
 **Install on Debian**
 - Get the latest version
 
