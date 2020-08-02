@@ -153,13 +153,15 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 	defer wg.Wait() // Wait for all reverse lookups to be done before we return.
 
 	for _, entry := range m {
+		entry.Fields = entry.Fields.Merge(field.FieldStatus)
+
 		entries = append(entries, entry)
 
-		if entry.Fields.Contains(field.Reverse) {
+		if entry.Fields.Contains(field.FieldReverse) {
 			s := ""
 			reverses = append(reverses, &s)
 			f.reverser.Lookup(entry.IP, &s, &wg)
-			entry.Fields = entry.Fields.Remove(field.Reverse) // Don't also let the backend do a reverse lookup.
+			entry.Fields = entry.Fields.Remove(field.FieldReverse) // Don't also let the backend do a reverse lookup.
 		} else {
 			reverses = append(reverses, nil)
 		}
@@ -206,8 +208,11 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 					entry.Expires = util.Now().Add(f.ttl)
 
 					if r := reverses[i]; r != nil {
-						entry.Fields = entry.Fields.Merge(field.Reverse)
-						entry.Response.Reverse = r
+						entry.Fields = entry.Fields.Merge(field.FieldReverse)
+
+						if entry.Response.Status == nil || *entry.Response.Status != "fail" {
+							entry.Response.Reverse = r
+						}
 					}
 				}
 

@@ -7,7 +7,10 @@ import (
 
 const Default = 61439 // status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query,message
 
-const Reverse = 4096
+const (
+	FieldReverse = 4096
+	FieldStatus  = 16384
+)
 
 var fields = map[string]int{
 	"country":       1,
