@@ -4,6 +4,8 @@ import "strings"
 
 const Default = 61439 // status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query,message
 
+const Reverse = 4096
+
 var fields = map[string]int{
 	"country":       1,
 	"countryCode":   2,
@@ -65,4 +67,8 @@ func (f Fields) String() string {
 		}
 	}
 	return strings.Join(parts, ",")
+}
+
+func (f Fields) Remove(o Fields) Fields {
+	return f & ^o
 }

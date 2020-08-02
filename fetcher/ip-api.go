@@ -10,6 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ip-api/proxy/field"
+	"github.com/ip-api/proxy/reverse"
 	"github.com/ip-api/proxy/structs"
 	"github.com/ip-api/proxy/util"
 	"github.com/mailru/easyjson/jwriter"
@@ -26,6 +28,8 @@ type Client interface {
 type ipApi struct {
 	mu sync.Mutex
 
+	reverser reverse.Reverser
+
 	clients  map[string]*fasthttp.HostClient
 	batchURL string
 	selfURL  string
@@ -37,7 +41,7 @@ type ipApi struct {
 
 var ErrRetryLimitReached = errors.New("reached retry limit")
 
-func NewIPApi(logger zerolog.Logger) (*ipApi, error) {
+func NewIPApi(logger zerolog.Logger, reverser reverse.Reverser) (*ipApi, error) {
 	ttl := time.Hour * 24
 	if v := os.Getenv("CACHE_TTL"); v != "" {
 		if d, err := time.ParseDuration(v); err != nil {
@@ -57,6 +61,7 @@ func NewIPApi(logger zerolog.Logger) (*ipApi, error) {
 	}
 
 	f := &ipApi{
+		reverser: reverser,
 		clients:  make(map[string]*fasthttp.HostClient),
 		batchURL: "https://pro.ip-api.com/batch?key=" + os.Getenv("IP_API_KEY"),
 		selfURL:  "https://pro.ip-api.com/json/?key=" + os.Getenv("IP_API_KEY") + "&lang=",
@@ -142,8 +147,22 @@ func (f *ipApi) getBatchServerAndClient() (*server, *fasthttp.HostClient) {
 
 func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 	entries := make(structs.CacheEntries, 0, len(m))
+	reverses := make([]*string, 0, len(m))
+
+	var wg sync.WaitGroup
+	defer wg.Wait() // Wait for all reverse lookups to be done before we return.
+
 	for _, entry := range m {
 		entries = append(entries, entry)
+
+		if entry.Fields.Contains(field.Reverse) {
+			s := ""
+			reverses = append(reverses, &s)
+			f.reverser.Lookup(entry.IP, &s, &wg)
+			entry.Fields = entry.Fields.Remove(field.Reverse) // Don't also let the backend do a reverse lookup.
+		} else {
+			reverses = append(reverses, nil)
+		}
 	}
 
 	req := fasthttp.AcquireRequest()
@@ -179,12 +198,17 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 					if len(responses) == 1 && responses[0].Message != nil {
 						return fmt.Errorf("%s", *responses[0].Message)
 					}
-					return fmt.Errorf("backend response cound (%d) doesn't match requested count (%d)", len(responses), len(entries))
+					return fmt.Errorf("backend response count (%d) doesn't match requested count (%d)", len(responses), len(entries))
 				}
 
 				for i, entry := range entries {
 					entry.Response = responses[i]
 					entry.Expires = util.Now().Add(f.ttl)
+
+					if r := reverses[i]; r != nil {
+						entry.Fields = entry.Fields.Merge(field.Reverse)
+						entry.Response.Reverse = r
+					}
 				}
 
 				return nil

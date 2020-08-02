@@ -1,2 +1,1 @@
-- Do reverse lookups ourselves
 - Add /stats endpoint with some performance metrics

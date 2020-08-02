@@ -12,6 +12,7 @@ import (
 	"github.com/ip-api/proxy/cache"
 	"github.com/ip-api/proxy/fetcher"
 	"github.com/ip-api/proxy/handlers"
+	"github.com/ip-api/proxy/reverse"
 	"github.com/ip-api/proxy/util"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
@@ -60,7 +61,9 @@ func main() {
 
 	logger = logger.With().Str("part", "main").Logger()
 
-	client, err := fetcher.NewIPApi(logger.With().Str("part", "fetcher").Logger())
+	reverser := reverse.New(logger.With().Str("part", "reverser").Logger())
+
+	client, err := fetcher.NewIPApi(logger.With().Str("part", "fetcher").Logger(), reverser)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("could not create fetcher")
 	}
@@ -68,7 +71,7 @@ func main() {
 	cacheSize := 1024 * 1024 * 1024 // 1GB
 	if v := os.Getenv("CACHE_SIZE"); v != "" {
 		if n, err := strconv.Atoi(v); err != nil {
-			logger.Fatal().Err(err).Msg("invalid cache size")
+			logger.Fatal().Err(err).Msg("invalid CACHE_SIZE")
 		} else {
 			cacheSize = n
 		}

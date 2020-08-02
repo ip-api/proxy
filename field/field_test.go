@@ -38,3 +38,13 @@ func TestMerge(t *testing.T) {
 		t.Errorf("%s does not contain %s", c, b)
 	}
 }
+
+func TestRemove(t *testing.T) {
+	a := field.FromCSV("isp,query,timezone")
+	b := field.FromCSV("isp,district")
+	e := field.FromCSV("query,timezone")
+
+	if g := a.Remove(b); g != e {
+		t.Errorf("got %s expected %s", g, e)
+	}
+}
