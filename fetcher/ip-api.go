@@ -21,7 +21,7 @@ import (
 
 type Client interface {
 	Fetch(map[string]*structs.CacheEntry) error
-	FetchSelf(lang string) (structs.Response, error)
+	FetchSelf(lang string, fields field.Fields) (structs.Response, error)
 	Debug() interface{}
 }
 
@@ -64,7 +64,7 @@ func NewIPApi(logger zerolog.Logger, reverser reverse.Reverser) (*ipApi, error) 
 		reverser: reverser,
 		clients:  make(map[string]*fasthttp.HostClient),
 		batchURL: "https://pro.ip-api.com/batch?key=" + os.Getenv("IP_API_KEY"),
-		selfURL:  "https://pro.ip-api.com/json/?key=" + os.Getenv("IP_API_KEY") + "&lang=",
+		selfURL:  "https://pro.ip-api.com/json/?key=" + os.Getenv("IP_API_KEY"),
 		ttl:      ttl,
 		retries:  retries,
 	}
@@ -231,11 +231,11 @@ func (f *ipApi) Fetch(m map[string]*structs.CacheEntry) error {
 	return err
 }
 
-func (f *ipApi) FetchSelf(lang string) (structs.Response, error) {
+func (f *ipApi) FetchSelf(lang string, fields field.Fields) (structs.Response, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	if err := req.URI().Parse(nil, []byte(f.selfURL+lang)); err != nil {
+	if err := req.URI().Parse(nil, []byte(f.selfURL+"&lang="+lang+"&fields="+fields.Num())); err != nil {
 		return structs.Response{}, err
 	}
 	req.Header.SetMethod(fasthttp.MethodGet)

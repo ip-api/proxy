@@ -93,7 +93,7 @@ func (h Handler) single(ctx *fasthttp.RequestCtx) {
 	}
 
 	if len(path) <= len(strSlashJsonSlash) {
-		r, err := h.Client.FetchSelf(lang)
+		r, err := h.Client.FetchSelf(lang, fields)
 		if err != nil {
 			h.writeResponse(ctx, structs.ErrorResponse("fail", "error in upstream").Trim(fields))
 			return

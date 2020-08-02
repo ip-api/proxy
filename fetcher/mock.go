@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ip-api/proxy/field"
 	"github.com/ip-api/proxy/structs"
 	"github.com/ip-api/proxy/util"
 )
@@ -31,7 +32,7 @@ func (mo *Mock) Fetch(m map[string]*structs.CacheEntry) error {
 	return nil
 }
 
-func (mo *Mock) FetchSelf(lang string) (structs.Response, error) {
+func (mo *Mock) FetchSelf(lang string, fields field.Fields) (structs.Response, error) {
 	mo.Lock()
 	defer mo.Unlock()
 

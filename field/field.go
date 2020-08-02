@@ -1,6 +1,9 @@
 package field
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 const Default = 61439 // status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query,message
 
@@ -67,6 +70,10 @@ func (f Fields) String() string {
 		}
 	}
 	return strings.Join(parts, ",")
+}
+
+func (f Fields) Num() string {
+	return strconv.Itoa(int(f))
 }
 
 func (f Fields) Remove(o Fields) Fields {
