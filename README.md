@@ -35,7 +35,7 @@ WantedBy=multi-user.target
 **Environment variables**
 
 | Name            | Type     | Default                                         | Description |
-| ------------ --- | -------- | ----------------------------------------------- | ----------- |
+| --------------- | -------- | ----------------------------------------------- | ----------- |
 | IP_API_KEY      | String   | *required*                                      | ip-api.com key |
 | LISTEN          | String   | 127.0.0.1:8080                                  | ip:port to listen on |
 | CACHE_TTL       | Duration | 24h                                             | For how long to cache entries |
