@@ -1,10 +1,12 @@
 package reverse
 
 import (
+	"context"
 	"net"
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -22,7 +24,8 @@ type single struct {
 type reverser struct {
 	logger zerolog.Logger
 
-	queue chan single
+	resolver net.Resolver
+	queue    chan single
 }
 
 func New(logger zerolog.Logger) Reverser {
@@ -35,9 +38,17 @@ func New(logger zerolog.Logger) Reverser {
 		}
 	}
 
+	preferGo := true
+	if os.Getenv("REVERSE_PREFERGO") == "false" {
+		preferGo = false
+	}
+
 	r := &reverser{
 		logger: logger,
-		queue:  make(chan single, workers*10),
+		resolver: net.Resolver{
+			PreferGo: preferGo,
+		},
+		queue: make(chan single, workers*10),
 	}
 
 	for i := 0; i < workers; i++ {
@@ -49,9 +60,11 @@ func New(logger zerolog.Logger) Reverser {
 
 func (l *reverser) worker() {
 	for s := range l.queue {
-		addrs, err := net.LookupAddr(s.ip)
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*2))
+		addrs, err := l.resolver.LookupAddr(ctx, s.ip)
+		cancel()
 		if err != nil {
-			l.logger.Warn().Err(err).Str("ip", s.ip).Msg("failed to do reverse lookup")
+			l.logger.Debug().Err(err).Str("ip", s.ip).Msg("failed to do reverse lookup")
 			*s.out = ""
 		} else {
 			if len(addrs) == 0 || len(addrs[0]) == 0 {
