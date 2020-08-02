@@ -13,6 +13,19 @@ adduser --system --disabled-password --disabled-login --home /opt/ip-api-proxy -
 
 - Copy the binary to ```/opt/ip-api-proxy/proxy```
 
+- Create a config file
+
+```
+/opt/ip-api-proxy/config
+```
+
+Example configuration:
+
+```
+IP_API_KEY=your_api_key
+LOG_OUTPUT=info
+```
+
 - Create a systemd file
 ```[Unit]
 Description=ip-api proxy server
@@ -36,17 +49,10 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
-- Create a config file
-
+- Enable and start the service
 ```
-/opt/ip-api-proxy/config
-```
-
-Example configuration:
-
-```
-IP_API_KEY=your_api_key
-LOG_OUTPUT=info
+systemctl enable ip-api-proxy
+systemctl start ip-api-proxy
 ```
 
 **Environment variables**
