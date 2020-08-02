@@ -44,3 +44,5 @@ WantedBy=multi-user.target
 | POPS_URL     | Url      | https://d2e7s0viy93a0y.cloudfront.net/pops.json | Endpoint to fetch server locations |
 | POPS_REFRESH | Duration | 1h                                              | How often to refresh the server locations  |
 | BATCH_DELAY  | Duration | 10ms                                            | Max delay before sending a batch to the backend |
+| LOG_OUTPUT   | String   | ""                                              | Set to "console" for console friendly output |
+| LOG_LEVEL    | String   | ""                                              | Can be set to "info", "warn" or "error" to reduce log output |

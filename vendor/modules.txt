@@ -11,11 +11,14 @@ github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/gen
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
 # github.com/rs/zerolog v1.19.0
 ## explicit
 github.com/rs/zerolog
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
+github.com/rs/zerolog/pkgerrors
 # github.com/valyala/bytebufferpool v1.0.0
 github.com/valyala/bytebufferpool
 # github.com/valyala/fasthttp v1.15.1

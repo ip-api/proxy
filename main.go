@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -13,14 +14,51 @@ import (
 	"github.com/ip-api/proxy/handlers"
 	"github.com/ip-api/proxy/util"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/pkgerrors"
 	"github.com/valyala/fasthttp"
 )
 
 func main() {
-	logger := zerolog.New(zerolog.ConsoleWriter{
-		Out:        os.Stderr,
-		TimeFormat: "15:04:05.000",
-	}).With().Str("part", "main").Logger()
+	var logger zerolog.Logger
+
+	if os.Getenv("LOG_OUTPUT") == "console" {
+		logger = zerolog.New(zerolog.ConsoleWriter{
+			Out:        os.Stderr,
+			TimeFormat: "15:04:05.000",
+		})
+	} else {
+		// Use structured JSON logging compatible with Google Stack Driver.
+
+		// https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
+		zerolog.MessageFieldName = "message"
+		zerolog.CallerFieldName = "caller"
+		zerolog.ErrorStackFieldName = "stacktrace"
+		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
+		zerolog.TimestampFieldName = "timestamp"
+		zerolog.TimeFieldFormat = time.RFC3339Nano
+		zerolog.TimestampFunc = func() time.Time {
+			return time.Now().UTC()
+		}
+
+		// https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
+		zerolog.LevelFieldName = "severity"
+		zerolog.LevelFieldMarshalFunc = convertLevelToStackdriver
+
+		logger = zerolog.New(os.Stderr)
+		logger = logger.Hook(zerolog.HookFunc(defaultLevelToInfo))
+	}
+
+	// Default is to log everything.
+	switch os.Getenv("LOG_LEVEL") {
+	case "info":
+		logger = logger.Level(zerolog.InfoLevel)
+	case "warn":
+		logger = logger.Level(zerolog.WarnLevel)
+	case "error":
+		logger = logger.Level(zerolog.ErrorLevel)
+	}
+
+	logger = logger.With().Str("part", "main").Logger()
 
 	client, err := fetcher.NewIPApi(logger.With().Str("part", "fetcher").Logger())
 	if err != nil {
@@ -76,7 +114,10 @@ func main() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	<-ch
+	signal.Stop(ch)
 
+	// Shut down the http server so another process can take over.
+	// But wait for 10 seconds to give active connections some time to terminate gracefully.
 	go func() {
 		if err := s.Shutdown(); err != nil {
 			logger.Error().Err(err).Msg("failed to shutdown server")
@@ -84,4 +125,37 @@ func main() {
 	}()
 
 	time.Sleep(time.Second * 10)
+}
+
+// convertLevelToStackdriver converts a zerolog.Level to a stackdriver compatible
+// sererity string.
+//
+// See: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
+func convertLevelToStackdriver(l zerolog.Level) string {
+	switch l {
+	case zerolog.NoLevel:
+		fallthrough
+	case zerolog.DebugLevel:
+		return "DEBUG"
+	case zerolog.InfoLevel:
+		return "INFO"
+	case zerolog.WarnLevel:
+		return "WARNING"
+	case zerolog.ErrorLevel:
+		return "ERROR"
+	case zerolog.FatalLevel:
+		return "CRITICAL"
+	case zerolog.PanicLevel:
+		return "EMERGENCY"
+	default:
+		return strings.ToUpper(l.String())
+	}
+}
+
+// defaultLevelToInfo is a zerolog Hook that add severity:INFO  to an event
+// if it has the level 'NoLevel' set.
+func defaultLevelToInfo(e *zerolog.Event, level zerolog.Level, message string) {
+	if level == zerolog.NoLevel {
+		e.Str("severity", "INFO")
+	}
 }
