@@ -3,35 +3,32 @@
 A proxy that caches query results from the ip-api.com pro endpoint.
 
 - better performance via multiple keep-alive connections to ip-api servers
-- finds the best ip-api PoP based on latency
+- finds the best PoP based on latency
 - retries failed requests
 - advanced caching for each response field
 - automatically batches requests to reduce network requests
 
 Only /json and /batch are supported.
 
-After installing, change your applications to use ```http://127.0.0.1:8080``` instead of ```http(s)://pro.ip-api.com```
+### Getting Started
 
-**Install on Debian**
-- Get the latest version
+**Install on Linux - Debian**
 
-```
-go get -u github.com/ip-api/proxy
-```
+- Create a user
 
-- Add user
-
-```
+```bash
 adduser --system --disabled-password --disabled-login --home /opt/ip-api-proxy --group ip-api-proxy
 ```
+- Install the latest version
 
-- Copy the binary to ```/opt/ip-api-proxy/proxy```
+If you do not have go installed, please see https://golang.org/doc/install.
+```bash
+GOBIN=/opt/ip-api-proxy/ go get -u github.com/ip-api/proxy
+```
 
 - Create a config file
 
-```
-/opt/ip-api-proxy/config
-```
+`/opt/ip-api-proxy/config`
 
 Example configuration:
 
@@ -40,8 +37,14 @@ IP_API_KEY=your_api_key
 LOG_OUTPUT=info
 ```
 
-- Create a systemd file
-```[Unit]
+- Create a systemd file 
+
+`/etc/systemd/system/ip-api-proxy.service`
+
+Suggested configuration:
+
+```
+[Unit]
 Description=ip-api proxy server
 Documentation=https://github.com/ip-api/proxy
 After=network.target
@@ -56,7 +59,7 @@ NoNewPrivileges=true
 User=ip-api-proxy
 WorkingDirectory=/opt/ip-api-proxy
 EnvironmentFile=/opt/ip-api-proxy/config
-ExecStart=/opt/ip-api-proxy
+ExecStart=/opt/ip-api-proxy/proxy
 Restart=on-failure
 
 [Install]
@@ -68,6 +71,11 @@ WantedBy=multi-user.target
 systemctl enable ip-api-proxy
 systemctl start ip-api-proxy
 ```
+
+### Usage
+
+Modify your applications to use http://127.0.0.1:8080 instead of http(s)://pro.ip-api.com.
+
 
 **Environment variables**
 
