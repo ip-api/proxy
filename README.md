@@ -1,4 +1,6 @@
-**ip-api cache**
+**WARNING**: This is a pre-release version and is not suitable for production use. It is for evaluation purposes only. Please report all bugs by creating a issue, or by [contacting us directly](https://members.ip-api.com/contact).
+
+### ip-api cache
 
 A proxy that caches query results from the ip-api.com pro endpoint.
 
@@ -75,7 +77,6 @@ systemctl start ip-api-proxy
 ### Usage
 
 Modify your applications to use http://127.0.0.1:8080 instead of http(s)://pro.ip-api.com.
-
 
 **Environment variables**
 
