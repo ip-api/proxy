@@ -36,7 +36,7 @@ Example configuration:
 
 ```
 IP_API_KEY=your_api_key
-LOG_OUTPUT=info
+LOG_LEVEL=info
 ```
 
 - Create a systemd file 
