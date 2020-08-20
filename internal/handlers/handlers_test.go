@@ -3,8 +3,9 @@ package handlers_test
 import (
 	"testing"
 
-	"github.com/ip-api/proxy/handlers"
 	"github.com/valyala/fasthttp"
+
+	"github.com/ip-api/proxy/internal/handlers"
 )
 
 func Test404(t *testing.T) {

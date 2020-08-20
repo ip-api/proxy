@@ -4,10 +4,11 @@ package structs
 
 import (
 	json "encoding/json"
-	field "github.com/ip-api/proxy/field"
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
+
+	field "github.com/ip-api/proxy/internal/field"
 )
 
 // suppress unused package warning

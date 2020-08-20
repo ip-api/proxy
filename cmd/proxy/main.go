@@ -8,15 +8,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ip-api/proxy/batch"
-	"github.com/ip-api/proxy/cache"
-	"github.com/ip-api/proxy/fetcher"
-	"github.com/ip-api/proxy/handlers"
-	"github.com/ip-api/proxy/reverse"
-	"github.com/ip-api/proxy/util"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
 	"github.com/valyala/fasthttp"
+
+	"github.com/ip-api/proxy/internal/batch"
+	"github.com/ip-api/proxy/internal/cache"
+	"github.com/ip-api/proxy/internal/fetcher"
+	"github.com/ip-api/proxy/internal/handlers"
+	"github.com/ip-api/proxy/internal/reverse"
+	"github.com/ip-api/proxy/internal/util"
 )
 
 func main() {

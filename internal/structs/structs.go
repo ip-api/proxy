@@ -4,8 +4,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/ip-api/proxy/field"
 	_ "github.com/mailru/easyjson/gen"
+
+	"github.com/ip-api/proxy/internal/field"
 )
 
 //go:generate easyjson
