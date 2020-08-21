@@ -25,7 +25,7 @@ adduser --system --disabled-password --disabled-login --home /opt/ip-api-proxy -
 
 If you do not have go installed, please see https://golang.org/doc/install.
 ```bash
-GOBIN=/opt/ip-api-proxy/ go get -u github.com/ip-api/proxy
+GOBIN=/opt/ip-api-proxy/ go get -u github.com/ip-api/proxy/cmd/proxy
 ```
 
 - Create a config file
