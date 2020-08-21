@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ip-api/proxy/wait"
+	"github.com/ip-api/proxy/internal/wait"
 )
 
 func TestWait(t *testing.T) {

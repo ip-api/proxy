@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ip-api/proxy/field"
-	"github.com/ip-api/proxy/structs"
-	"github.com/ip-api/proxy/util"
+	"github.com/ip-api/proxy/internal/field"
+	"github.com/ip-api/proxy/internal/structs"
+	"github.com/ip-api/proxy/internal/util"
 )
 
 type Mock struct {

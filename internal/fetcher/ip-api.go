@@ -10,13 +10,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ip-api/proxy/field"
-	"github.com/ip-api/proxy/reverse"
-	"github.com/ip-api/proxy/structs"
-	"github.com/ip-api/proxy/util"
 	"github.com/mailru/easyjson/jwriter"
 	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
+
+	"github.com/ip-api/proxy/internal/field"
+	"github.com/ip-api/proxy/internal/reverse"
+	"github.com/ip-api/proxy/internal/structs"
+	"github.com/ip-api/proxy/internal/util"
 )
 
 type Client interface {

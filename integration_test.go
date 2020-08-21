@@ -9,15 +9,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ip-api/proxy/batch"
-	"github.com/ip-api/proxy/cache"
-	"github.com/ip-api/proxy/fetcher"
-	"github.com/ip-api/proxy/field"
-	"github.com/ip-api/proxy/handlers"
-	"github.com/ip-api/proxy/structs"
-	"github.com/ip-api/proxy/util"
 	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
+
+	"github.com/ip-api/proxy/internal/batch"
+	"github.com/ip-api/proxy/internal/cache"
+	"github.com/ip-api/proxy/internal/fetcher"
+	"github.com/ip-api/proxy/internal/field"
+	"github.com/ip-api/proxy/internal/handlers"
+	"github.com/ip-api/proxy/internal/structs"
+	"github.com/ip-api/proxy/internal/util"
 )
 
 func TestSingle(t *testing.T) {

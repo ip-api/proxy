@@ -5,11 +5,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ip-api/proxy/cache"
-	"github.com/ip-api/proxy/fetcher"
-	"github.com/ip-api/proxy/field"
-	"github.com/ip-api/proxy/structs"
 	"github.com/rs/zerolog"
+
+	"github.com/ip-api/proxy/internal/cache"
+	"github.com/ip-api/proxy/internal/fetcher"
+	"github.com/ip-api/proxy/internal/field"
+	"github.com/ip-api/proxy/internal/structs"
 )
 
 const (

@@ -7,17 +7,18 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/ip-api/proxy/batch"
-	"github.com/ip-api/proxy/cache"
-	"github.com/ip-api/proxy/fetcher"
-	"github.com/ip-api/proxy/field"
-	"github.com/ip-api/proxy/structs"
-	"github.com/ip-api/proxy/util"
-	"github.com/ip-api/proxy/wait"
 	"github.com/mailru/easyjson"
 	"github.com/mailru/easyjson/jwriter"
 	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
+
+	"github.com/ip-api/proxy/internal/batch"
+	"github.com/ip-api/proxy/internal/cache"
+	"github.com/ip-api/proxy/internal/fetcher"
+	"github.com/ip-api/proxy/internal/field"
+	"github.com/ip-api/proxy/internal/structs"
+	"github.com/ip-api/proxy/internal/util"
+	"github.com/ip-api/proxy/internal/wait"
 )
 
 var (
