@@ -18,4 +18,4 @@ WORKDIR /root/
 
 COPY --from=0 /app/proxy .
 
-CMD ["/proxy"]  
+CMD ["/root/proxy"]  
