@@ -33,7 +33,7 @@ var (
 	strPostGetOptions                         = []byte("POST, GET, OPTIONS")
 	strSlashBatch                             = []byte("/batch")
 	strSlashDebug                             = []byte("/debug")
-	strSlashHealth                            = []byte("/health")
+	strSlashPing                              = []byte("/ping")
 	strSlashJson                              = []byte("/json")
 	strSlashJsonSlash                         = []byte("/json/")
 	strStar                                   = []byte("*")
@@ -257,8 +257,8 @@ func (h Handler) debug(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (h Handler) health(ctx *fasthttp.RequestCtx) {
-	fmt.Fprintf(ctx, "ok")
+func (h Handler) ping(ctx *fasthttp.RequestCtx) {
+	fmt.Fprintf(ctx, "pong")
 }
 
 func (h Handler) Index(ctx *fasthttp.RequestCtx) {
@@ -287,8 +287,8 @@ func (h Handler) Index(ctx *fasthttp.RequestCtx) {
 		h.batch(ctx)
 	} else if bytes.Equal(path, strSlashDebug) {
 		h.debug(ctx)
-	} else if bytes.Equal(path, strSlashHealth) {
-		h.health(ctx)
+	} else if bytes.Equal(path, strSlashPing) {
+		h.ping(ctx)
 	} else {
 		ctx.Response.SetStatusCode(fasthttp.StatusNotFound)
 	}
